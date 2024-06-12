@@ -10,7 +10,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <>
       <div>
         <Header></Header>
-        {children}
+        <div className='mx-5 md:mx-20 lg:mx-36'>
+          {children}
+        </div>
+        {/* {children} */}
         </div>
     </>
   );
