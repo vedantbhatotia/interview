@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"; // Adjust the path based on your project structure
 import { Button } from "@/components/ui/button"; // Adjust the path based on your project structure
 import { Input } from "@/components/ui/input"; // Adjust the path based on your project structure
@@ -17,7 +17,7 @@ import { MockInterview } from "@/utils/schema";
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@clerk/nextjs";
 import moment from "moment";
-
+import { useRouter } from "next/navigation";
 interface QuestionAnswer {
   question: string;
   answer: string;
@@ -31,6 +31,7 @@ export default function AddNewInterview() {
   const [loading, setLoading] = useState<boolean>(false);
   const [jsonResponse, setJsonResponse] = useState<QuestionAnswer[]>([]);
   const { user } = useUser();
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,14 +44,13 @@ export default function AddNewInterview() {
       const responseText = await result.response.text();
       const jsonMatches = responseText.match(/```json([\s\S]*?)```/g);
       if (jsonMatches) {
-        const jsonResponses: QuestionAnswer[] = jsonMatches.map((match: string) =>
-          JSON.parse(match.replace(/```json|```/g, "").trim())
-        );
+        const jsonResponses: QuestionAnswer[] = jsonMatches.map((match: string) => {
+          const cleanedMatch = match.replace(/```json|```/g, "").trim();
+          return cleanedMatch;
+        });
         console.log(jsonResponses);
         setJsonResponse(jsonResponses);
-        const resp = await db
-          .insert(MockInterview)
-          .values({
+        const resp = await db.insert(MockInterview).values({
             mockId: uuidv4(),
             jsonMockResp: JSON.stringify(jsonResponses),
             jobPosition: jobPosition,
@@ -58,19 +58,24 @@ export default function AddNewInterview() {
             jobExperience: jobExperience.toString(),
             createdBy: user?.primaryEmailAddress?.emailAddress ?? "",
             createdAt: moment().format("DD-MM-yyyy"),
-          })
-          .returning({ mockId: MockInterview.mockId });
+          }).returning({ mockId: MockInterview.mockId });
         console.log(resp);
-        // setJobPosition("");
-        // setJobDescription("");
-        // setJobExperience(0);
-        // setJsonResponse([]);
-        // setOpenDialog(false);
+        if (resp && resp[0]?.mockId) {
+          router.push('/dashboard/interview/' + resp[0]?.mockId);
+        } else {
+          console.error("Failed to get mockId from response:", resp);
+        }
+        setJobPosition("");
+        setJobDescription("");
+        setJobExperience(0);
+        setJsonResponse([]);
+        setOpenDialog(false);
       } else {
         console.error("No JSON parts found in the response.");
       }
     } catch (error) {
-      console.error("Error parsing JSON response:", error);
+      // console.error("Error parsing JSON response:", error);
+      console.log("err",error);
     } finally {
       setLoading(false);
     }
