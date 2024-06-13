@@ -12,15 +12,15 @@ import { Input } from "@/components/ui/input"; // Adjust the path based on your 
 import { Textarea } from "@/components/ui/textarea"; // Adjust the path based on your project structure
 import { chatSession } from "@/utils/geminiai"; // Adjust the path based on your project structure
 import { Loader } from "lucide-react"; // Assuming you have lucide-react for loader animation
-
-interface Answer {
-  approach: string | string[];
-  [key: string]: any;
-}
+import { db } from "@/utils/db";
+import { MockInterview } from "@/utils/schema";
+import { v4 as uuidv4 } from "uuid";
+import { useUser } from "@clerk/nextjs";
+import moment from "moment";
 
 interface QuestionAnswer {
   question: string;
-  answer: Answer;
+  answer: string;
 }
 
 export default function AddNewInterview() {
@@ -29,26 +29,43 @@ export default function AddNewInterview() {
   const [jobDescription, setJobDescription] = useState("");
   const [jobExperience, setJobExperience] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [jsonResponse, setJsonResponse] = useState<QuestionAnswer[]>([]);
+  const { user } = useUser();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
-    const inputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDescription}, Years Of Experience: ${jobExperience}. Depending on the job description, job position, and years of experience, give 5 advanced, modern, tricky interview questions that can be used to assess the candidate for the job profile and give a reference answer for each question in JSON format. Give the question and answer field in JSON format.`;
+    const inputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDescription}, Years Of Experience: ${jobExperience}. Depending on the job description, job position, and years of experience, give 5 advanced, modern, tricky interview questions that can be used to assess the candidate for the job profile and give a reference answer for each question in JSON format. Give the question and answer field in a single JSON object.`;
 
     try {
       const result = await chatSession.sendMessage(inputPrompt);
       const responseText = await result.response.text();
       const jsonMatches = responseText.match(/```json([\s\S]*?)```/g);
-      console.log(jsonMatches);
       if (jsonMatches) {
-        const jsonResponses: string[] = jsonMatches.map((match:string) =>
-          match.replace(/```json|```/g, "").trim()
+        const jsonResponses: QuestionAnswer[] = jsonMatches.map((match: string) =>
+          JSON.parse(match.replace(/```json|```/g, "").trim())
         );
-        const finalResults: QuestionAnswer[] = jsonResponses.map((jsonStr) =>
-          JSON.parse(jsonStr)
-        );
-        console.log("Final results:", finalResults);
+        console.log(jsonResponses);
+        setJsonResponse(jsonResponses);
+        const resp = await db
+          .insert(MockInterview)
+          .values({
+            mockId: uuidv4(),
+            jsonMockResp: JSON.stringify(jsonResponses),
+            jobPosition: jobPosition,
+            jobDesc: jobDescription,
+            jobExperience: jobExperience.toString(),
+            createdBy: user?.primaryEmailAddress?.emailAddress ?? "",
+            createdAt: moment().format("DD-MM-yyyy"),
+          })
+          .returning({ mockId: MockInterview.mockId });
+        console.log(resp);
+        // setJobPosition("");
+        // setJobDescription("");
+        // setJobExperience(0);
+        // setJsonResponse([]);
+        // setOpenDialog(false);
       } else {
         console.error("No JSON parts found in the response.");
       }
@@ -75,11 +92,14 @@ export default function AddNewInterview() {
             </DialogTitle>
             <DialogDescription>
               <div>
-                <h2>Add Details about Your Role, Description, Years Of Experience</h2>
+                <h2>
+                  Add Details about Your Role, Description, Years Of Experience
+                </h2>
                 <div className="mt-6 my-3">
                   <label>Job Role/Job Position</label>
                   <Input
                     placeholder="EX: Full Stack Developer"
+                    value={jobPosition}
                     onChange={(e) => setJobPosition(e.target.value)}
                   />
                 </div>
@@ -87,6 +107,7 @@ export default function AddNewInterview() {
                   <label>Job Description/Tech Stack</label>
                   <Textarea
                     placeholder="EX: Full Stack Developer"
+                    value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
                   />
                 </div>
@@ -95,6 +116,7 @@ export default function AddNewInterview() {
                   <Input
                     placeholder="5"
                     type="number"
+                    value={jobExperience}
                     onChange={(e) =>
                       setJobExperience(parseInt(e.target.value, 10))
                     }
