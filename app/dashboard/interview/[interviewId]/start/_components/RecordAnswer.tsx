@@ -2,19 +2,28 @@ import { useState, useEffect } from "react";
 import Webcam from "react-webcam";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-
+import useSpeechToText, { ResultType } from 'react-hook-speech-to-text';
+// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { Mic } from "lucide-react";
 export default function RecordAnswer() {
     const [webCamEnabled, setWebCamEnabled] = useState<boolean>(false);
-    const { transcript, browserSupportsSpeechRecognition } = useSpeechRecognition();
-    useEffect(() => {
-        if (!browserSupportsSpeechRecognition) {
-        }
-    }, [browserSupportsSpeechRecognition]);
-
-    const startListening = () => SpeechRecognition.startListening({ continuous: true, language: 'en-IN' });
-    const stopListening = () => SpeechRecognition.stopListening();
-
+    const [userResponse,setUserResponse] = useState<string>('');
+    const {
+        error,
+        interimResult,
+        isRecording,
+        results,
+        startSpeechToText,
+        stopSpeechToText,
+      } = useSpeechToText({
+        continuous: true,
+        useLegacyResults: false
+      });
+      useEffect(()=>{
+        results.map((result:any)=>{
+            setUserResponse(prevResp=>prevResp+result?.transcript)
+        })
+      },[results])
     return (
         <div className="flex items-center justify-center flex-col text-white">
             <div className="flex flex-col mt-20 justify-center items-center bg-black rounded-lg p-5">
@@ -44,19 +53,20 @@ export default function RecordAnswer() {
                     {webCamEnabled ? 'Disable' : 'Enable'} Webcam
                 </button>
             </div>
-            <Button variant="outline" className="my-10" onClick={startListening}>
-                Record Answer
+            <Button variant="outline" className="my-10" onClick={isRecording?stopSpeechToText:startSpeechToText}>
+                {isRecording ? (
+                    <h2>
+                        <Mic />
+                        {'Stop Recording'}
+                    </h2>
+                ) : (
+                    'Record Answer'
+                )}
             </Button>
-            {/* <button 
-                onClick={stopListening} 
-                className="mt-5 px-4 py-2 bg-red-500 text-white rounded"
-            >
-                Stop Listening
-            </button> */}
-            console.log({transcript});
-            <div className="main-content">
-                {transcript}
-            </div>
+            <Button onClick={()=>console.log(userResponse)}>
+                Show User Answer
+            </Button>
+            {/* {console.log({results})} */}
         </div>
     );
 }
