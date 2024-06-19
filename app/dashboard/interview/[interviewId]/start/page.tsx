@@ -31,7 +31,7 @@ import RecordAnswer from "./_components/RecordAnswer";
                  */}
                  <QuestionsSection mockInterviewQuestion={mockInterviewQuestion} activeQuestionIndex={activeQuestionIndex}>
                  </QuestionsSection>
-                 <RecordAnswer></RecordAnswer>
+                 <RecordAnswer mockInterviewQuestion={mockInterviewQuestion} activeQuestionIndex={activeQuestionIndex}></RecordAnswer>
             </div>
         </div>
     )

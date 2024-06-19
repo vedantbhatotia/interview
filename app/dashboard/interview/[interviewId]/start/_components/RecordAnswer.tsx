@@ -4,10 +4,13 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import useSpeechToText, { ResultType } from 'react-hook-speech-to-text';
 import { Mic } from "lucide-react";
+import { toast } from "sonner";
+import { chatSession } from "@/utils/geminiai";
 
-export default function RecordAnswer() {
+export default function RecordAnswer({ mockInterviewQuestion, activeQuestionIndex }: any) {
     const [webCamEnabled, setWebCamEnabled] = useState<boolean>(false);
     const [userResponse, setUserResponse] = useState<string>('');
+    const activeQuestion = mockInterviewQuestion && JSON.parse(mockInterviewQuestion[activeQuestionIndex]);
     const {
         error,
         interimResult,
@@ -21,11 +24,39 @@ export default function RecordAnswer() {
     });
 
     useEffect(() => {
-        results.map((result:any) => {
+        results.map((result: any) => {
             setUserResponse(prevResp => prevResp + result?.transcript);
         });
     }, [results]);
 
+    async function SaveUserAnswer() {
+        if (isRecording) {
+            stopSpeechToText();
+            const feedbackPrompt = `question:${activeQuestion?.question}, user answer:${userResponse}, depending on the question and the user response please give back a rating in numbers and feedback as area of improvement if any in 3-5 lines in JSON format with rating field and feedback field`;
+            const result = await chatSession.sendMessage(feedbackPrompt);
+            const responseText = await result.response.text();
+            const jsonMatch = responseText.match(/```json([\s\S]*?)```/);
+            if (jsonMatch && jsonMatch[1]) {
+                try {
+                    console.log(jsonMatch[1]);
+                    let extractedJson = JSON.parse(jsonMatch[1]);
+                    console.log(extractedJson);
+                    console.log(extractedJson.rating);
+                    console.log(extractedJson.feedback);
+                }
+                catch (error) {
+                    console.error('Error parsing JSON:', error);
+                    toast('Error parsing feedback response');
+                }
+            }
+            else {
+                toast('No valid JSON found in feedback response');
+            }
+        } 
+        else {
+            startSpeechToText();
+        }
+    }
     useEffect(() => {
         console.log(userResponse);
     }, [userResponse]);
@@ -59,7 +90,7 @@ export default function RecordAnswer() {
                     {webCamEnabled ? 'Disable' : 'Enable'} Webcam
                 </button>
             </div>
-            <Button variant="outline" className="my-10" onClick={isRecording ? stopSpeechToText : startSpeechToText}>
+            <Button variant="outline" className="my-10" onClick={SaveUserAnswer}>
                 {isRecording ? (
                     <h2 className="flex gap-2">
                         <Mic />
@@ -72,7 +103,6 @@ export default function RecordAnswer() {
             <Button onClick={() => console.log(userResponse)}>
                 Show User Answer
             </Button>
-            {/* console.log({userResponse}) */}
         </div>
     );
 }
