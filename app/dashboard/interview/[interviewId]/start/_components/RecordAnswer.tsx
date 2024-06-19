@@ -11,7 +11,7 @@ import { userAnswer } from "@/utils/schema";
 import { useUser } from "@clerk/nextjs";
 import moment from "moment";
 
-export default function RecordAnswer({ mockInterviewQuestion,activeQuestionIndex,interviewData}:any) {
+export default function RecordAnswer({ mockInterviewQuestion, activeQuestionIndex,interviewData}:any) {
     const [webCamEnabled, setWebCamEnabled] = useState<boolean>(false);
     const [userResponse, setUserResponse] = useState<string>('');
     const [responseProcessed, setResponseProcessed] = useState<boolean>(false);
@@ -25,6 +25,7 @@ export default function RecordAnswer({ mockInterviewQuestion,activeQuestionIndex
         results,
         startSpeechToText,
         stopSpeechToText,
+        setResults
     } = useSpeechToText({
         continuous: true,
         useLegacyResults: false
@@ -84,6 +85,7 @@ export default function RecordAnswer({ mockInterviewQuestion,activeQuestionIndex
         setLoading(false);
         setUserResponse('');
         setResponseProcessed(false);
+        setResults([]);
     }
 
     return (
