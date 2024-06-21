@@ -54,9 +54,9 @@ export default function Component() {
                 </div>
               </div>
               <img
-                src="/placeholder.svg"
+                src="https://static.vecteezy.com/system/resources/previews/011/933/960/original/human-resource-manage-silhouette-icon-job-interview-meeting-black-pictogram-recruitment-find-work-career-communication-icon-employer-hire-employee-isolated-illustration-vector.jpg"
                 width="550"
-                height="550"
+                height="540"
                 alt="Hero"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
               />
@@ -108,7 +108,7 @@ export default function Component() {
                 </ul>
               </div>
               <img
-                src="/placeholder.svg"
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCwT2KQWnBqjB6xhlTYhEmvzrF4q3dtZVxSg&s"
                 width="550"
                 height="310"
                 alt="Features"
@@ -165,13 +165,21 @@ export default function Component() {
                   </p>
                 </div>
               </div>
-              <img
-                src="/placeholder.svg"
-                width="550"
-                height="310"
-                alt="Testimonials"
-                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
-              />
+              <div className="grid gap-4 rounded-lg bg-background p-6">
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage src="/placeholder-user.jpg" />
+                      <AvatarFallback>JD</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium leading-none">Sarah Johnson</p>
+                      <p className="text-sm text-muted-foreground">Business Analyst</p>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground">
+                    "Using the Mock AI Interview app has been a game-changer for my job search. The realistic interview simulations helped me build confidence and improve my responses. I landed my dream job thanks to this amazing tool!"
+                  </p>
+                </div>
             </div>
           </div>
         </section>

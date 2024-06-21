@@ -28,6 +28,9 @@ export default function FeedBack({params}:any){
     return(
         <div className="p-10">
         {/* FeedBack */}
+        {feedbackList.length === 0?<h2 className="font-bold text-xl text-gray-500 mt-4">
+            No Interview Feedback Found
+        </h2>:<>
         <h2 className="text-3xl font-bold text-green-500">
             Congratulations!!
         </h2>
@@ -39,6 +42,7 @@ export default function FeedBack({params}:any){
                 8/10
             </strong>
         </h2>
+
         <h2 className="text-sm text-gray-500">
             Find Below the list of the Interview Questions with Model Answers,Your Responses and Feedback for improvement
         </h2>
@@ -77,8 +81,9 @@ export default function FeedBack({params}:any){
             </CollapsibleContent>
           </Collapsible>
         ))}
+        </>}
         {/* <Link></> */}
-        <Button onClick={()=>router.replace('/dashboard')}>
+        <Button onClick={()=>router.replace('/dashboard')} className="mt-4">
             Home
         </Button>
         </div>
