@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Webcam from "react-webcam";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import useSpeechToText, { ResultType } from 'react-hook-speech-to-text';
+import useSpeechToText from 'react-hook-speech-to-text';
 import { Mic } from "lucide-react";
 import { toast } from "sonner";
 import { chatSession } from "@/utils/geminiai";
@@ -11,13 +11,26 @@ import { userAnswer } from "@/utils/schema";
 import { useUser } from "@clerk/nextjs";
 import moment from "moment";
 
-export default function RecordAnswer({ mockInterviewQuestion, activeQuestionIndex,interviewData}:any) {
+export default function RecordAnswer({ mockInterviewQuestion, activeQuestionIndex, interviewData }: any) {
     const [webCamEnabled, setWebCamEnabled] = useState<boolean>(false);
     const [userResponse, setUserResponse] = useState<string>('');
     const [responseProcessed, setResponseProcessed] = useState<boolean>(false);
-    const activeQuestion = mockInterviewQuestion && JSON.parse(mockInterviewQuestion[activeQuestionIndex]);
     const { user } = useUser();
     const [loading, setLoading] = useState<boolean>(false);
+
+    let activeQuestion: any = null;
+
+    try {
+        // Directly use the item if it's an object, otherwise handle it as a string
+        const jsonString = mockInterviewQuestion && mockInterviewQuestion[activeQuestionIndex];
+        console.log('JSON String:', jsonString);
+        activeQuestion = typeof jsonString === 'object' ? jsonString : { question: jsonString };
+    } catch (error) {
+        console.error('Error handling data:', error);
+    }
+
+    console.log('Active Question:', activeQuestion);
+
     const {
         error,
         interimResult,
@@ -81,7 +94,6 @@ export default function RecordAnswer({ mockInterviewQuestion, activeQuestionInde
                 console.error('Error parsing JSON:', error);
             }
         }
-
         setLoading(false);
         setUserResponse('');
         setResponseProcessed(false);

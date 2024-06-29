@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@clerk/nextjs";
 import moment from "moment";
 import { useRouter } from "next/navigation";
+
 interface QuestionAnswer {
   question: string;
   answer: string;
@@ -29,7 +30,7 @@ export default function AddNewInterview() {
   const [jobDescription, setJobDescription] = useState("");
   const [jobExperience, setJobExperience] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const [jsonResponse, setJsonResponse] = useState<QuestionAnswer[]>([]);
+  const [jsonResponse, setJsonResponse] = useState<any>([]);
   const { user } = useUser();
   const router = useRouter();
 
@@ -37,45 +38,48 @@ export default function AddNewInterview() {
     e.preventDefault();
     setLoading(true);
 
-    const inputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDescription}, Years Of Experience: ${jobExperience}. Depending on the job description, job position, and years of experience, give 5 advanced, modern, tricky interview questions that can be used to assess the candidate for the job profile and give a reference answer for each question in JSON format. Give the question and answer field in a single JSON object.`;
-
     try {
+      const inputPrompt = `Job Position: ${jobPosition}, Job Description: ${jobDescription}, Years Of Experience: ${jobExperience}. Depending on the job description, job position, and years of experience, give 5 advanced, modern, tricky interview questions that can be used to assess the candidate for the job profile and give a reference answer for each question in JSON format. Give the question and answer field in a single JSON object.`;
       const result = await chatSession.sendMessage(inputPrompt);
       const responseText = await result.response.text();
-      const jsonMatches = responseText.match(/```json([\s\S]*?)```/g);
-      if (jsonMatches) {
-        const jsonResponses: QuestionAnswer[] = jsonMatches.map((match: string) => {
-          const cleanedMatch = match.replace(/```json|```/g, "").trim();
-          return cleanedMatch;
-        });
-        console.log(jsonResponses);
-        setJsonResponse(jsonResponses);
-        const resp = await db.insert(MockInterview).values({
-            mockId: uuidv4(),
-            jsonMockResp: JSON.stringify(jsonResponses),
-            jobPosition: jobPosition,
-            jobDesc: jobDescription,
-            jobExperience: jobExperience.toString(),
-            createdBy: user?.primaryEmailAddress?.emailAddress ?? "",
-            createdAt: moment().format("DD-MM-yyyy"),
-          }).returning({ mockId: MockInterview.mockId });
-        console.log(resp);
-        if (resp && resp[0]?.mockId) {
-          router.push('/dashboard/interview/' + resp[0]?.mockId);
-        } else {
-          console.error("Failed to get mockId from response:", resp);
-        }
-        setJobPosition("");
-        setJobDescription("");
-        setJobExperience(0);
-        setJsonResponse([]);
-        setOpenDialog(false);
+      console.log('Raw Response:', responseText);
+
+      // Clean the response text
+      const MockJsonResp = responseText.replace('```json', '').replace('```', '').trim();
+      console.log('Cleaned JSON Response:', MockJsonResp);
+      setJsonResponse(MockJsonResp);
+      // Parse the JSON response
+      // const parsedResponse = JSON.parse(MockJsonResp);
+      // setJsonResponse(parsedResponse);
+
+      // Insert into database
+      const resp = await db.insert(MockInterview).values({
+        mockId: uuidv4(),
+        jsonMockResp: MockJsonResp,
+        jobPosition: jobPosition,
+        jobDesc: jobDescription,
+        jobExperience: jobExperience.toString(),
+        createdBy: user?.primaryEmailAddress?.emailAddress ?? "",
+        createdAt: moment().format("DD-MM-yyyy"),
+      }).returning({ mockId: MockInterview.mockId });
+
+      console.log(resp);
+
+      // Navigate to the interview page
+      if (resp && resp[0]?.mockId) {
+        router.push('/dashboard/interview/' + resp[0]?.mockId);
       } else {
-        console.error("No JSON parts found in the response.");
+        console.error("Failed to get mockId from response:", resp);
       }
+
+      // Reset state
+      setJobPosition("");
+      setJobDescription("");
+      setJobExperience(0);
+      setJsonResponse([]);
+      setOpenDialog(false);
     } catch (error) {
-      // console.error("Error parsing JSON response:", error);
-      console.log("err",error);
+      console.error("Error parsing JSON response:", error);
     } finally {
       setLoading(false);
     }
@@ -97,9 +101,7 @@ export default function AddNewInterview() {
             </DialogTitle>
             <DialogDescription>
               <div>
-                <h2>
-                  Add Details about Your Role, Description, Years Of Experience
-                </h2>
+                <h2>Add Details about Your Role, Description, Years Of Experience</h2>
                 <div className="mt-6 my-3">
                   <label>Job Role/Job Position</label>
                   <Input
@@ -122,9 +124,7 @@ export default function AddNewInterview() {
                     placeholder="5"
                     type="number"
                     value={jobExperience}
-                    onChange={(e) =>
-                      setJobExperience(parseInt(e.target.value, 10))
-                    }
+                    onChange={(e) => setJobExperience(parseInt(e.target.value, 10))}
                   />
                 </div>
               </div>
